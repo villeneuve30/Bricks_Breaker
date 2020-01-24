@@ -25,7 +25,11 @@ footer, header, hgroup, menu, nav, section {
 	display: block;
 }
 body {
-	line-height: 1;
+	height:100vh;
+	background: black;
+	display:flex;
+	justify-content: center;
+	align-items: center;
 }
 ol, ul {
 	list-style: none;
@@ -35,7 +39,6 @@ blockquote, q {
 }
 blockquote:before, blockquote:after,
 q:before, q:after {
-	content: '';
 	content: none;
 }
 table {
@@ -50,5 +53,4 @@ table {
 
 /*css*/
 #gamecanvas{
-	border: 3px solid green;
 }

@@ -1,82 +1,122 @@
-var canvas = document.getElementById("gamecanvas");
-var ctx = canvas.getContext("2d");
+const canvas = document.getElementById("gamecanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth/1.5;
+canvas.height = window.innerHeight - 50;
+ctx.imageSmoothingEnabled = false;
 
-var M = {};
-var C = {};
-var V = {};
+//declaration d'image
+const backgroundImage = new Image();
+backgroundImage.src = "img/backgroundSpace.png";
+const userImage = new Image();
+userImage.src = "img/user.png";
+const ballImage = new Image();
+ballImage.src = "img/ball.png";
+const block1Image = new Image();
+block1Image.src = "img/block1.png";
+const block2Image = new Image();
+block2Image.src = "img/block2.png";
+const blockUnbreakable = new Image();
+blockUnbreakable.src = "img/blockUnbreakable.png";
 
+
+
+let M = {};
+let C = {};
+let V = {};
+
+//Parent des éléments physique du jeu (User, blocks, ball)
 class physicElement {
     constructor(posX,posY,width,height,status = true){
-        this.posX = posX;
-        this.posY = posY;
-        this.width = width;
-        this.height = height;
-        this.status = status;
+        this._posX = posX;
+        this._posY = posY;
+        this._width = width;
+        this._height = height;
+        this._status = status;
     }
 
-    getX(){ return this.posX; }
-    setX(value){ this.posX = value; }
+    get posX(){ return this._posX; }
+    set posX(value){ this._posX = value; }
 
-    getY(){ return this.posY;}
-    setY(value){ this.posY = value; }
+    get posY(){ return this._posY;}
+    set posY(value){ this._posY = value; }
 
-    getWidth(){ return this.width; }
-    setWidth(value){ this.width = value; }
+    get width(){ return this._width; }
+    set width(value){ this._width = value; }
 
-    getHeight(){ return this.height; }
-    setHeight(value){ this.height = value; }
+    get height(){ return this._height; }
+    set height(value){ this._height = value; }
 
-    getStatus(){ return this.status; }
-    setStatus(value){ this.status = value; }
+    get status(){ return this._status; }
+    set status(value){ this._status = value; }
 }
 class Block extends physicElement{
-    constructor(posX,posY,width,height,status){
+    constructor(posX,posY,width,height,status, life = 1){
         super(posX,posY,width,height,status);
+        this._life = life;
     }
+    get life(){return this._life;}
+    loseLife(){this._life--}
 }
 class User extends physicElement{
     constructor(posX,posY,width,height,status,life = 3){
         super(posX,posY,width,height,status);
-        this.life = life;
+        this._life = life;
     }
 
-    getLife(){return this.life;}
-    loseLife(){this.life--}
+    get life(){return this._life;}
+    loseLife(){this._life--}
+
+    moveUser(move){
+        this._posX += move;
+    }
 }
-User.prototype.moveUser = function(move){
-    this.posX += move;
-};
 
 
 class Ball extends physicElement{
-    constructor(posX,posY,width,height,status, move){
+    constructor(posX,posY,width,height,status, move, ballSpeed = 6){
         super(posX,posY,width,height,status);
-        this.move = move;
+        this._isMoving = move;
+        this._ballSpeed = ballSpeed;
+    }
+    get ballSpeed(){ return this._ballSpeed}
+    set ballSpeed(value){ this._ballSpeed = value}
+
+    get isMoving(){
+        return this._isMoving;
+    }
+    start(){
+        this._isMoving = true;
+    }
+    stop(){
+        this._isMoving = false;
+    }
+    moveBall(moveX, moveY){
+        this._posX += moveX;
+        this._posY += moveY;
     }
 }
-Ball.prototype.isMoving = function(){
-    return this.move
-};
-Ball.prototype.start = function(){
-    this.move = true;
-};
-Ball.prototype.moveBall = function(moveX, moveY){
-    this.posX += moveX;
-    this.posY += moveY;
-};
 
 M = {
-    blocksWidth: 60,
+    blocksWidth: 40,
     blocksHeight: 40,
+    blocksMatrice: [
+        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0],
+        [0,2,1,1,1,1,2,0,2,1,1,1,1,2,0],
+        [0,2,1,1,1,1,2,0,2,1,1,1,1,2,0],
+        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0]
+    ],
+    matriceLength: 0,
+    blocksNumber: 0,
 
-    ballSpeed: 5,
+    canvasWidth: 0,
+
     ballWidth: 20,
     ballHeight: 20,
 
     userSpeed:10,
     userActualMove:0,
-    userWidth: 80,
-    userHeight: 10,
+    userWidth: 100,
+    userHeight: 15,
 
     moveX : 0,
     moveY : 0,
@@ -84,19 +124,29 @@ M = {
     user :{},
     ball :{},
     blocks: [],
-    i:2,
 
     initBall: function(){
-        M.ball = new Ball(M.user.getX() + M.user.getWidth()/2, M.user.getY() - M.ballHeight , M.ballWidth, M.ballHeight, true, false);
-        M.moveX = M.ballSpeed;
-        M.moveY = -M.ballSpeed;
+        M.ball = new Ball(M.user.posX + M.user.width/2 - M.ballWidth/2, M.user.posY - M.ballHeight , M.ballWidth, M.ballHeight, true, false);
+        M.moveX = 1;
+        M.moveY = -1;
     },
     resetUserPositionAndSize: function(){
-        M.user.setX(canvas.width / 2 - M.userWidth/2);
-        M.user.setWidth(M.userWidth);
-        M.user.setHeight(M.userHeight);
+        M.user.posX = canvas.width / 2 - M.userWidth/2;
+        M.user.width = M.userWidth;
+        M.user.height = M.userHeight;
     },
     init: function () {
+        M.matriceLength = M.blocksMatrice[0].length;
+        canvas.width = M.matriceLength*M.blocksWidth;
+
+        for(let i = 0; i < M.blocksMatrice.length; i++) {
+            for (let y = 0; y < M.blocksMatrice[i].length; y++) {
+                if (M.blocksMatrice[i][y] > 0 && M.blocksMatrice[i][y] < 3) {
+                    M.blocksNumber++;
+                }
+            }
+        }
+
         M.user = new User(canvas.width / 2 - M.userWidth/2, canvas.height - 50, M.userWidth, M.userHeight, true);
         M.initBall();
 
@@ -105,84 +155,121 @@ M = {
                 if(M.userActualMove >= 0){
                     M.userActualMove = -M.userSpeed;
                 }
-                C.sync_M_and_V();
             }
             if (e.key === "ArrowRight") {
                 if(M.userActualMove <= 0){
                     M.userActualMove = M.userSpeed;
                 }
-                C.sync_M_and_V();
             }
             if (e.key === " ") {
                 M.ball.start();
-                C.sync_M_and_V();
             }
+            C.sync_M_and_V();
         });
         document.body.addEventListener('keyup', (e) => {
             if(e.key === "ArrowLeft" || e.key === "ArrowRight"){
                 M.userActualMove = 0;
             }
         });
-        var posx = 60;
-        var posy = 100;
-        for (let i = 0; i <= 10; i++) {
-            M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true));
-            posx += 60;
+        let posx = 0;
+        let posy = 100;
+        for(let i = 0; i < M.blocksMatrice.length; i++) {
+            for (let y = 0; y < M.blocksMatrice[i].length; y++) {
+                if (M.blocksMatrice[i][y] > 0) {
+                    if(M.blocksMatrice[i][y] === 1)
+                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true));
+                    else if(M.blocksMatrice[i][y] === 2)
+                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, 2));
+                    else if(M.blocksMatrice[i][y] === 3)
+                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, -1));
+                }
+                posx += M.blocksWidth;
+            }
+            posx = M.canvasWidth;
+            posy += M.blocksHeight;
+        }
+    },
+    isBorderLeftOrRightCollision: function (index) {
+        return (M.ball.posX + M.ball.width - M.ball.ballSpeed < M.blocks[index].posX && M.moveX > 0) ||
+            (M.ball.posX + M.ball.ballSpeed > M.blocks[index].posX + M.blocks[index].width && M.moveX < 0);
+    },
+    getBricksCollision: function () {
+        for (let index = 0; index < M.blocks.length; index++) {
+            if (M.blocks[index].status && M.isCollision(M.ball, M.blocks[index])) {
+                if (M.isBorderLeftOrRightCollision(index)) {
+                    M.moveX = -M.moveX;
+                }else{
+                    M.moveY = -M.moveY;
+                }
+
+                if(M.blocks[index].life !== -1)
+                    M.blocks[index].loseLife();
+                if(M.blocks[index].life === 0) {
+                    M.blocks[index].status = false;
+                    M.blocksNumber--;
+                }
+
+                return true;
+            }
+        }
+    },
+    getUserCollision: function () {
+        if (M.isCollision(M.ball, M.user) && M.moveY > 0) {
+            if (M.ball.posX + M.ball.width/2< M.user.posX + M.user.width / 4 && M.moveX > 0) {
+                M.moveX = -M.moveX
+            }
+            if (M.ball.posX + M.ball.width/2> M.user.posX + M.user.width - M.user.width / 4 && M.moveX < 0) {
+                M.moveX = -M.moveX
+            }
+            M.moveY = -M.moveY;
+            return true;
         }
     },
     moveBall: function () {
-        if(M.ball.getY() - M.ball.getHeight()/2 < M.ballSpeed){
-            M.moveY = -M.moveY;
-        }
-        if(M.ball.getX() > canvas.width){
-            M.moveX = -M.moveX;
-        }
-        if(M.ball.getX() < 0){
-            M.moveX = -M.moveX;
-        }
-        if (M.ball.getY() > canvas.height) {
-            M.resetUserPositionAndSize();
-            M.initBall();
-            M.user.loseLife();
-            if(!M.user.getLife()){
-                M.init()
-            }
-        }
-
-        if(M.isCollision(M.ball,M.user) && M.moveY > 0){
-            if(M.ball.getX() < M.user.getX() + M.user.getWidth()/4 && M.moveX > 0){
-                M.moveX = -M.moveX
-            }
-            if(M.ball.getX() > M.user.getX() + M.user.getWidth() - M.user.getWidth()/4 && M.moveX < 0){
-                M.moveX = -M.moveX
-            }
-            M.moveY = -M.moveY;
-        }
-        M.blocks.forEach(function(e, index){
-            if(M.blocks[index].getStatus() && M.isCollision(M.ball, M.blocks[index])){
-                if(M.ball.getY() < M.blocks[index].getY() + M.blocks[index].getHeight() && M.ball.getY() > M.blocks[index].getY()){
-                    M.moveX = -M.moveX;
-                }
+        for(let y = 0; y < M.ball.ballSpeed; y++) {
+            M.ball.moveBall(M.moveX, M.moveY);
+            if (M.ball.posY < 0) {
                 M.moveY = -M.moveY;
-                M.blocks[index].setStatus(false);
             }
-        });
+            if (M.ball.posX + M.ball.width> canvas.width) {
+                M.moveX = -M.moveX;
+            }
+            if (M.ball.posX < 0) {
+                M.moveX = -M.moveX;
+            }
+            if (M.ball.posY > canvas.height) {
+                M.resetUserPositionAndSize();
+                M.initBall();
+                M.user.loseLife();
+                if (!M.user.life) {
+                    M.init()
+                }
+            }
 
+            if(M.getUserCollision() === true){
+                break;
+            }
 
-        M.ball.moveBall(M.moveX, M.moveY);
-
-    },
+            if(M.getBricksCollision() === true){
+                break;
+            }
+        }
+        if(M.blocksNumber === 0){
+            M.ball.stop();
+            alert("partie finie");
+        }
+        },
     moveUser: function(){
         M.user.moveUser(M.userActualMove);
-        if(!M.ball.isMoving()){
-            M.ball.setX(M.user.getX()+M.user.getWidth()/2)
+        if(!M.ball.isMoving){
+            M.ball.posX = M.user.posX + M.user.width/2 - M.ball.width/2;
         }
     },
     isCollision: function (elemA, elemB) {
-        return elemA.getX() < elemB.getX() + elemB.getWidth() &&
-            elemA.getX() + elemA.getWidth() > elemB.getX() &&
-            elemA.getY() < elemB.getY() + elemB.getHeight() &&
-            elemA.getHeight() + elemA.getY() > elemB.getY();
+        return elemA.posX < elemB.posX + elemB.width &&
+            elemA.posX + elemA.width > elemB.posX &&
+            elemA.posY < elemB.posY + elemB.height &&
+            elemA.height + elemA.posY > elemB.posY;
     }
 };
 C = {
@@ -192,7 +279,7 @@ C = {
         C.refresh();
     },
     refresh: function step() {
-        if (M.ball.isMoving())
+        if (M.ball.isMoving)
             M.moveBall();
 
         if(M.userActualMove !== 0)
@@ -206,32 +293,33 @@ C = {
         V.clear();
         let user = M.user;
         let copyUser = {
-            x: user.getX(),
-            y:user.getY(),
-            width: user.getWidth(),
-            height: user.getHeight(),
-            status: user.getStatus(),
+            x: user.posX,
+            y:user.posY,
+            width: user.width,
+            height: user.height,
+            status: user.status,
         };
 
         let blocks = M.blocks;
         var copyBlocks = Array();
         blocks.forEach(function(e){
             copyBlocks.push({
-                x: e.getX(),
-                y: e.getY(),
-                width: e.getWidth(),
-                height: e.getHeight(),
-                status: e.getStatus()
+                x: e.posX,
+                y: e.posY,
+                width: e.width,
+                height: e.height,
+                status: e.status,
+                life: e.life
             })
         });
 
         let ball = M.ball;
         let copyBall= {
-            x: ball.getX(),
-            y: ball.getY(),
-            width: ball.getWidth(),
-            height: ball.getHeight(),
-            status: ball.getStatus()
+            x: ball.posX,
+            y: ball.posY,
+            width: ball.width,
+            height: ball.height,
+            status: ball.status
         };
         V.render_canvas(copyUser, copyBlocks, copyBall);
     }
@@ -244,32 +332,41 @@ V = {
     },
     drawUser: function(user)
     {
-        ctx.beginPath();
-        ctx.rect(user.x, user.y, user.width, user.height);
-        ctx.stroke();
-        ctx.closePath();
+        //render user
+        ctx.drawImage(userImage, user.x,user.y, user.width, user.height);
     },
     drawBlocks:function(blocks)
     {
-        ctx.beginPath();
         //render blocks
-        for(e in blocks){
-            if(blocks[e].status)
-                ctx.rect(blocks[e].x, blocks[e].y, blocks[e].width, blocks[e].height)
+        for(let e in blocks){
+            if(blocks[e].status) {
+                switch (blocks[e].life) {
+                    case 1:
+                        ctx.drawImage(block1Image, blocks[e].x, blocks[e].y, blocks[e].width, blocks[e].height);
+                        break;
+
+                    case 2:
+                        ctx.drawImage(block2Image, blocks[e].x, blocks[e].y, blocks[e].width, blocks[e].height);
+                        break;
+
+                    case -1 :
+                        ctx.drawImage(blockUnbreakable, blocks[e].x, blocks[e].y, blocks[e].width, blocks[e].height);
+                        break;
+                }
+            }
         }
-        ctx.stroke();
-        ctx.closePath();
     },
     drawBall:function(ball){
-        ctx.beginPath();
         //render balls
         if(ball.status)
-            ctx.arc(ball.x, ball.y, ball.width/2, 0, 2 * Math.PI);
-        ctx.stroke();
-        ctx.closePath();
+            ctx.drawImage(ballImage, ball.x, ball.y, ball.width, ball.height);
+    },
+    drawBackground:function(){
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height)
     },
     render_canvas(user, blocks, ball)
     {
+        V.drawBackground();
         V.drawUser(user);
         V.drawBlocks(blocks);
         V.drawBall(ball)
