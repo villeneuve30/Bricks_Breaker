@@ -50,7 +50,7 @@ class physicElement {
     set status(value){ this._status = value; }
 }
 class Block extends physicElement{
-    constructor(posX,posY,width,height,status, life = 1){
+    constructor(posX,posY,width,height,status, life){
         super(posX,posY,width,height,status);
         this._life = life;
     }
@@ -73,7 +73,7 @@ class User extends physicElement{
 
 
 class Ball extends physicElement{
-    constructor(posX,posY,width,height,status, move, ballSpeed = 6){
+    constructor(posX,posY,width,height,status, move, ballSpeed = 5){
         super(posX,posY,width,height,status);
         this._isMoving = move;
         this._ballSpeed = ballSpeed;
@@ -100,10 +100,10 @@ M = {
     blocksWidth: 40,
     blocksHeight: 40,
     blocksMatrice: [
-        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0],
+        [0,-1,2,2,2,2,-1,0,-1,2,2,2,2,-1,0],
         [0,2,1,1,1,1,2,0,2,1,1,1,1,2,0],
         [0,2,1,1,1,1,2,0,2,1,1,1,1,2,0],
-        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0]
+        [0,-1,2,2,2,2,-1,0,-1,2,2,2,2,-1,0]
     ],
     matriceLength: 0,
     blocksNumber: 0,
@@ -120,6 +120,7 @@ M = {
 
     moveX : 0,
     moveY : 0,
+    ratioMax:0.9,
 
     user :{},
     ball :{},
@@ -175,13 +176,8 @@ M = {
         let posy = 100;
         for(let i = 0; i < M.blocksMatrice.length; i++) {
             for (let y = 0; y < M.blocksMatrice[i].length; y++) {
-                if (M.blocksMatrice[i][y] > 0) {
-                    if(M.blocksMatrice[i][y] === 1)
-                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true));
-                    else if(M.blocksMatrice[i][y] === 2)
-                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, 2));
-                    else if(M.blocksMatrice[i][y] === 3)
-                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, -1));
+                if (M.blocksMatrice[i][y] !== 0) {
+                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, M.blocksMatrice[i][y]));
                 }
                 posx += M.blocksWidth;
             }
@@ -215,13 +211,33 @@ M = {
     },
     getUserCollision: function () {
         if (M.isCollision(M.ball, M.user) && M.moveY > 0) {
-            if (M.ball.posX + M.ball.width/2< M.user.posX + M.user.width / 4 && M.moveX > 0) {
-                M.moveX = -M.moveX
+            let middleUser = M.user.posX + M.user.width/2;
+            let middleBall = M.ball.posX + M.ball.width/2;
+
+            //Positive ratio if left side (37-30 / 40-30) = 0.7 -0.3 => for X and 1.7 for Y
+            //Negative ratio if right side (47-30/ 40-30 = 1.7  0.3 => for Y and 1.7 for X 1.9
+            let ratio = (middleBall - M.user.posX) / (middleUser - M.user.posX);
+
+            let ratioY = 2;
+
+            if (ratio < 1 && ratio < 1 - M.ratioMax){
+                ratio = 1 - M.ratioMax;
+            }else if (ratio > 1 && ratio > 1 + M.ratioMax){
+                ratio = 1 + M.ratioMax;
             }
-            if (M.ball.posX + M.ball.width/2> M.user.posX + M.user.width - M.user.width / 4 && M.moveX < 0) {
-                M.moveX = -M.moveX
+            //left side collision
+            if (ratio < 1) {
+                M.moveX = -(1-ratio);
+                ratioY = 2-(1-ratio);
+            }else if(ratio > 1){
+                //right side collision
+                M.moveX = (ratio-1);
+                ratioY = 2-(ratio-1);
+            }else{
+                M.moveX = 0;
             }
-            M.moveY = -M.moveY;
+
+            M.moveY = -ratioY;
             return true;
         }
     },
@@ -242,7 +258,8 @@ M = {
                 M.initBall();
                 M.user.loseLife();
                 if (!M.user.life) {
-                    M.init()
+                    alert("Tu n'as plus de vies, réessaye ?");
+                    M.init();
                 }
             }
 
