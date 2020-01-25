@@ -30,11 +30,11 @@ blockUnbreakable.src = "img/blockUnbreakable.png";
     badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed"]
  */
 const doubleUserSize = new Image();
-doubleUserSize.src = "img/doubleUserSize.png";
+doubleUserSize.src = "img/bonus/doubleUserSize.png";
 const weaponShot = new Image();
-weaponShot.src = "img/weaponShot.png";
+weaponShot.src = "img/bonus/weaponShot.png";
 const threeBallsMore = new Image();
-threeBallsMore.src = "img/threeBallsMore.png";
+threeBallsMore.src = "img/bonus/threeBallsMore.png";
 const increaseUserSpeed = new Image();
 increaseUserSpeed.src = "img/increaseUserSpeed.png";
 const splitUserSize = new Image();
@@ -42,10 +42,11 @@ splitUserSize.src = "img/splitUserSize.png";
 const reverseControls = new Image();
 reverseControls.src = "img/reverseControls.png";
 const reduceUserSpeed = new Image();
-reduceUserSpeed.src = "img/reduceUserSpeed.png";
+reduceUserSpeed.src = "img/bonus/reduceUserSpeed.png";
 const increaseBallSpeed = new Image();
-increaseBallSpeed.src = "img/increaseBallSpeed.png";
-
+increaseBallSpeed.src = "img/bonus/increaseBallSpeed.png";
+const bombImage = new Image();
+bombImage.src = "img/bonus/bomb.png";
 
 
 let M = {};
@@ -166,7 +167,7 @@ M = {
     bonusArray: [],
     bonusFallSpeed: 3,
     goodEffects: ["doubleUserSize","weaponShot","threeBallsMore", "increaseUserSpeed"],
-    badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed"],
+    badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed","bomb"],
 
     moveX : 0,
     moveY : 0,
@@ -236,6 +237,12 @@ M = {
             posy += M.blocksHeight;
         }
     },
+    getUserLife: function(){
+        if (!M.user.life) {
+            alert("Tu n'as plus de vies, réessaye ?");
+            M.init();
+        }
+    },
     isBorderLeftOrRightCollision: function (index) {
         return (M.ball.posX + M.ball.width - M.ball.ballSpeed < M.blocks[index].posX && M.moveX > 0) ||
             (M.ball.posX + M.ball.ballSpeed > M.blocks[index].posX + M.blocks[index].width && M.moveX < 0);
@@ -251,9 +258,10 @@ M = {
                 effect = M.goodEffects[getRandomInt(M.goodEffects.length)];
             }else{
                 //bad effect
-                effect = M.goodEffects[getRandomInt(M.badEffects.length)];
+                effect = M.badEffects[getRandomInt(M.badEffects.length)];
             }
-            M.bonusArray.push(new Bonus(M.blocks[index].posX, M.blocks[index].posY, 20, 20, true, effect));
+            console.log(effect);
+            M.bonusArray.push(new Bonus(M.blocks[index].posX, M.blocks[index].posY, M.blocksWidth, M.blocksHeight, true, effect));
         }
     },
     getBricksCollision: function () {
@@ -325,10 +333,7 @@ M = {
             M.resetUserPositionAndSize();
             M.initBall();
             M.user.loseLife();
-            if (!M.user.life) {
-                alert("Tu n'as plus de vies, réessaye ?");
-                M.init();
-            }
+            M.getUserLife();
             return true
         }
         return false;
@@ -353,7 +358,7 @@ M = {
             M.ball.stop();
             alert("partie finie");
         }
-        },
+    },
     moveUser: function(){
         M.user.moveUser(M.userActualMove);
         if(!M.ball.isMoving){
@@ -364,6 +369,17 @@ M = {
         for(let index in M.bonusArray){
             M.bonusArray[index].moveBonus(M.bonusFallSpeed);
             if(M.isCollision(M.user, M.bonusArray[index])){
+                switch (M.bonusArray[index].effect) {
+                    case "doubleUserSize" :  ; break;
+                    case "weaponShot" : ; break;
+                    case "threeBallsMore" : ; break;
+                    case "increaseUserSpeed" : ; break;
+                    case "splitUserSize" : ; break;
+                    case "reverseControls" : ; break;
+                    case "reduceUserSpeed" : ; break;
+                    case "increaseBallSpeed" : ; break;
+                    case "bomb": M.user.loseLife(); M.getUserLife(); break;
+                }
                 M.bonusArray.splice(index, 1);
             }
         }
@@ -389,6 +405,7 @@ C = {
             M.moveUser();
 
         M.moveBonus();
+
 
         C.sync_M_and_V();
         requestAnimationFrame(step);
@@ -501,6 +518,7 @@ V = {
                 case "reverseControls" : imageToDraw = reverseControls; break;
                 case "reduceUserSpeed" : imageToDraw = reduceUserSpeed; break;
                 case "increaseBallSpeed" : imageToDraw = increaseBallSpeed; break;
+                case "bomb": imageToDraw = bombImage; break;
             }
             ctx.drawImage(imageToDraw, bonus[e].x, bonus[e].y, bonus[e].width, bonus[e].height)
         }
