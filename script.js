@@ -7,10 +7,15 @@ ctx.imageSmoothingEnabled = false;
 //declaration d'image
 const backgroundImage = new Image();
 backgroundImage.src = "img/backgroundSpace.png";
+
 const userImage = new Image();
 userImage.src = "img/user.png";
+const heartImage = new Image();
+heartImage.src = "img/heart.png";
+
 const ballImage = new Image();
 ballImage.src = "img/ball.png";
+
 const block1Image = new Image();
 block1Image.src = "img/block1.png";
 const block2Image = new Image();
@@ -19,14 +24,37 @@ const block3Image = new Image();
 block3Image.src = "img/block3.png";
 const blockUnbreakable = new Image();
 blockUnbreakable.src = "img/blockUnbreakable.png";
-const heartImage = new Image();
-heartImage.src = "img/heart.png";
+
+/*
+    goodEffects: ["doubleUserSize","weaponShot","threeBallsMore", "increaseUserSpeed"]
+    badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed"]
+ */
+const doubleUserSize = new Image();
+doubleUserSize.src = "img/doubleUserSize.png";
+const weaponShot = new Image();
+weaponShot.src = "img/weaponShot.png";
+const threeBallsMore = new Image();
+threeBallsMore.src = "img/threeBallsMore.png";
+const increaseUserSpeed = new Image();
+increaseUserSpeed.src = "img/increaseUserSpeed.png";
+const splitUserSize = new Image();
+splitUserSize.src = "img/splitUserSize.png";
+const reverseControls = new Image();
+reverseControls.src = "img/reverseControls.png";
+const reduceUserSpeed = new Image();
+reduceUserSpeed.src = "img/reduceUserSpeed.png";
+const increaseBallSpeed = new Image();
+increaseBallSpeed.src = "img/increaseBallSpeed.png";
 
 
 
 let M = {};
 let C = {};
 let V = {};
+
+function getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+}
 
 //Parent des éléments physique du jeu (User, blocks, ball)
 class physicElement {
@@ -52,6 +80,19 @@ class physicElement {
 
     get status(){ return this._status; }
     set status(value){ this._status = value; }
+}
+class Bonus extends physicElement{
+    constructor(posX,posY,width,height,status, effect){
+        super(posX,posY,width,height,status);
+        this._effect = effect;
+    }
+
+    moveBonus(move){
+        this.posY += move;
+    }
+    get effect(){
+        return this._effect;
+    }
 }
 class Block extends physicElement{
     constructor(posX,posY,width,height,status, life){
@@ -105,9 +146,9 @@ M = {
     blocksHeight: 40,
     blocksMatrice: [
         [0,-1,3,3,3,3,-1,0,-1,3,3,3,3,-1,0],
-        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0],
-        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0],
-        [0,2,3,3,3,3,2,0,2,3,3,3,3,2,0]
+        [0,3,0,2,2,0,3,0,3,0,2,2,0,3,0],
+        [0,3,2,0,0,2,3,0,3,2,0,0,2,3,0],
+        [0,2,0,3,3,0,2,0,2,0,3,3,0,2,0]
     ],
     matriceLength: 0,
     blocksNumber: 0,
@@ -121,6 +162,11 @@ M = {
     userActualMove:0,
     userWidth: 100,
     userHeight: 15,
+
+    bonusArray: [],
+    bonusFallSpeed: 3,
+    goodEffects: ["doubleUserSize","weaponShot","threeBallsMore", "increaseUserSpeed"],
+    badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed"],
 
     moveX : 0,
     moveY : 0,
@@ -139,14 +185,15 @@ M = {
         M.user.posX = canvas.width / 2 - M.userWidth/2;
         M.user.width = M.userWidth;
         M.user.height = M.userHeight;
+        M.userActualMove = 0;
     },
     init: function () {
         M.matriceLength = M.blocksMatrice[0].length;
         canvas.width = M.matriceLength*M.blocksWidth;
 
-        for(let i = 0; i < M.blocksMatrice.length; i++) {
-            for (let y = 0; y < M.blocksMatrice[i].length; y++) {
-                if (M.blocksMatrice[i][y] > 0 && M.blocksMatrice[i][y] < 3) {
+        for(let i in M.blocksMatrice) {
+            for (let y in M.blocksMatrice[i]) {
+                if (M.blocksMatrice[i][y] > 0) {
                     M.blocksNumber++;
                 }
             }
@@ -193,8 +240,24 @@ M = {
         return (M.ball.posX + M.ball.width - M.ball.ballSpeed < M.blocks[index].posX && M.moveX > 0) ||
             (M.ball.posX + M.ball.ballSpeed > M.blocks[index].posX + M.blocks[index].width && M.moveX < 0);
     },
+    bonusDropping: function(index){
+        let isDropping = getRandomInt(3);
+        let effect = null;
+        //bonus is drop
+        if(isDropping === 0){
+            let goodBonusOrNot = getRandomInt(2);
+            //good effect
+            if(goodBonusOrNot === 0){
+                effect = M.goodEffects[getRandomInt(M.goodEffects.length)];
+            }else{
+                //bad effect
+                effect = M.goodEffects[getRandomInt(M.badEffects.length)];
+            }
+            M.bonusArray.push(new Bonus(M.blocks[index].posX, M.blocks[index].posY, 20, 20, true, effect));
+        }
+    },
     getBricksCollision: function () {
-        for (let index = 0; index < M.blocks.length; index++) {
+        for (let index in M.blocks) {
             if (M.blocks[index].status && M.isCollision(M.ball, M.blocks[index])) {
                 if (M.isBorderLeftOrRightCollision(index)) {
                     M.moveX = -M.moveX;
@@ -209,6 +272,7 @@ M = {
                 if(M.blocks[index].life === 0) {
                     M.blocks[index].status = false;
                     M.blocksNumber--;
+                    M.bonusDropping(index);
                 }
 
                 return true;
@@ -296,7 +360,15 @@ M = {
             M.ball.posX = M.user.posX + M.user.width/2 - M.ball.width/2;
         }
     },
-    isCollision: function (elemA, elemB, speed = 0) {
+    moveBonus: function(){
+        for(let index in M.bonusArray){
+            M.bonusArray[index].moveBonus(M.bonusFallSpeed);
+            if(M.isCollision(M.user, M.bonusArray[index])){
+                M.bonusArray.splice(index, 1);
+            }
+        }
+    },
+    isCollision: function (elemA, elemB) {
         return elemA.posX < elemB.posX + elemB.width &&
             elemA.posX + elemA.width > elemB.posX &&
             elemA.posY < elemB.posY + elemB.height &&
@@ -316,24 +388,26 @@ C = {
         if(M.userActualMove !== 0)
             M.moveUser();
 
+        M.moveBonus();
+
         C.sync_M_and_V();
         requestAnimationFrame(step);
     },
     sync_M_and_V: function()
     {
         V.clear();
-        let user = M.user;
+
         let copyUser = {
-            x: user.posX,
-            y:user.posY,
-            width: user.width,
-            height: user.height,
-            status: user.status,
+            x: M.user.posX,
+            y:M.user.posY,
+            width: M.user.width,
+            height: M.user.height,
+            status: M.user.status,
+            life: M.user.life
         };
 
-        let blocks = M.blocks;
-        var copyBlocks = Array();
-        blocks.forEach(function(e){
+        let copyBlocks = Array();
+        M.blocks.forEach(function(e){
             copyBlocks.push({
                 x: e.posX,
                 y: e.posY,
@@ -344,15 +418,26 @@ C = {
             })
         });
 
-        let ball = M.ball;
         let copyBall= {
-            x: ball.posX,
-            y: ball.posY,
-            width: ball.width,
-            height: ball.height,
-            status: ball.status
+            x: M.ball.posX,
+            y: M.ball.posY,
+            width: M.ball.width,
+            height: M.ball.height,
+            status: M.ball.status
         };
-        V.render_canvas(copyUser, copyBlocks, copyBall);
+
+        let copyBonus = Array();
+        M.bonusArray.forEach(function(e){
+            copyBonus.push({
+                x: e.posX,
+                y: e.posY,
+                width: e.width,
+                height: e.height,
+                status: e.status,
+                effect: e.effect
+            });
+        });
+        V.render_canvas(copyUser, copyBlocks, copyBall, copyBonus);
     }
 };
 
@@ -365,6 +450,9 @@ V = {
     {
         //render user
         ctx.drawImage(userImage, user.x,user.y, user.width, user.height);
+        for(let i =1; i<= user.life; i++){
+            ctx.drawImage(heartImage, canvas.width - 30*i, 10, 28, 28);
+        }
     },
     drawBlocks:function(blocks)
     {
@@ -399,12 +487,31 @@ V = {
     drawBackground:function(){
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height)
     },
-    render_canvas(user, blocks, ball)
+
+    drawBonus: function(bonus){
+        for(let e in bonus){
+            let imageToDraw = null;
+            //get the bonus effect
+            switch (bonus[e].effect) {
+                case "doubleUserSize" :  imageToDraw = doubleUserSize; break;
+                case "weaponShot" : imageToDraw = weaponShot; break;
+                case "threeBallsMore" : imageToDraw = threeBallsMore; break;
+                case "increaseUserSpeed" : imageToDraw = increaseUserSpeed; break;
+                case "splitUserSize" : imageToDraw = splitUserSize; break;
+                case "reverseControls" : imageToDraw = reverseControls; break;
+                case "reduceUserSpeed" : imageToDraw = reduceUserSpeed; break;
+                case "increaseBallSpeed" : imageToDraw = increaseBallSpeed; break;
+            }
+            ctx.drawImage(imageToDraw, bonus[e].x, bonus[e].y, bonus[e].width, bonus[e].height)
+        }
+    },
+    render_canvas(user, blocks, ball, bonus)
     {
         V.drawBackground();
-        V.drawUser(user);
         V.drawBlocks(blocks);
-        V.drawBall(ball)
+        V.drawBall(ball);
+        V.drawBonus(bonus);
+        V.drawUser(user);
     }
 };
 
