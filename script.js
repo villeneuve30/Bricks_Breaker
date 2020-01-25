@@ -15,8 +15,12 @@ const block1Image = new Image();
 block1Image.src = "img/block1.png";
 const block2Image = new Image();
 block2Image.src = "img/block2.png";
+const block3Image = new Image();
+block3Image.src = "img/block3.png";
 const blockUnbreakable = new Image();
 blockUnbreakable.src = "img/blockUnbreakable.png";
+const heartImage = new Image();
+heartImage.src = "img/heart.png";
 
 
 
@@ -73,7 +77,7 @@ class User extends physicElement{
 
 
 class Ball extends physicElement{
-    constructor(posX,posY,width,height,status, move, ballSpeed = 5){
+    constructor(posX,posY,width,height,status, move, ballSpeed = 6){
         super(posX,posY,width,height,status);
         this._isMoving = move;
         this._ballSpeed = ballSpeed;
@@ -100,10 +104,10 @@ M = {
     blocksWidth: 40,
     blocksHeight: 40,
     blocksMatrice: [
-        [0,-1,2,2,2,2,-1,0,-1,2,2,2,2,-1,0],
-        [0,2,1,1,1,1,2,0,2,1,1,1,1,2,0],
-        [0,2,1,1,1,1,2,0,2,1,1,1,1,2,0],
-        [0,-1,2,2,2,2,-1,0,-1,2,2,2,2,-1,0]
+        [0,-1,3,3,3,3,-1,0,-1,3,3,3,3,-1,0],
+        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0],
+        [0,3,2,2,2,2,3,0,3,2,2,2,2,3,0],
+        [0,2,3,3,3,3,2,0,2,3,3,3,3,2,0]
     ],
     matriceLength: 0,
     blocksNumber: 0,
@@ -113,7 +117,7 @@ M = {
     ballWidth: 20,
     ballHeight: 20,
 
-    userSpeed:10,
+    userSpeed:8,
     userActualMove:0,
     userWidth: 100,
     userHeight: 15,
@@ -194,8 +198,10 @@ M = {
             if (M.blocks[index].status && M.isCollision(M.ball, M.blocks[index])) {
                 if (M.isBorderLeftOrRightCollision(index)) {
                     M.moveX = -M.moveX;
+                    M.ball.posX += M.moveX * 2;
                 }else{
                     M.moveY = -M.moveY;
+                    M.ball.posY += M.moveY * 2;
                 }
 
                 if(M.blocks[index].life !== -1)
@@ -208,6 +214,7 @@ M = {
                 return true;
             }
         }
+        return false;
     },
     getUserCollision: function () {
         if (M.isCollision(M.ball, M.user) && M.moveY > 0) {
@@ -241,33 +248,40 @@ M = {
             return true;
         }
     },
+    getCanvasCollision: function () {
+        if (M.ball.posY < 0) {
+            M.moveY = -M.moveY;
+            return true;
+        }
+        if (M.ball.posX + M.ball.width > canvas.width || M.ball.posX < 0) {
+            M.moveX = -M.moveX;
+            return true
+        }
+        if (M.ball.posY > canvas.height) {
+            M.resetUserPositionAndSize();
+            M.initBall();
+            M.user.loseLife();
+            if (!M.user.life) {
+                alert("Tu n'as plus de vies, réessaye ?");
+                M.init();
+            }
+            return true
+        }
+        return false;
+    },
     moveBall: function () {
         for(let y = 0; y < M.ball.ballSpeed; y++) {
             M.ball.moveBall(M.moveX, M.moveY);
-            if (M.ball.posY < 0) {
-                M.moveY = -M.moveY;
-            }
-            if (M.ball.posX + M.ball.width> canvas.width) {
-                M.moveX = -M.moveX;
-            }
-            if (M.ball.posX < 0) {
-                M.moveX = -M.moveX;
-            }
-            if (M.ball.posY > canvas.height) {
-                M.resetUserPositionAndSize();
-                M.initBall();
-                M.user.loseLife();
-                if (!M.user.life) {
-                    alert("Tu n'as plus de vies, réessaye ?");
-                    M.init();
-                }
-            }
 
-            if(M.getUserCollision() === true){
+            if(M.getCanvasCollision()){
                 break;
             }
 
-            if(M.getBricksCollision() === true){
+            if(M.getUserCollision()){
+                break;
+            }
+
+            if(M.getBricksCollision()){
                 break;
             }
         }
@@ -282,7 +296,7 @@ M = {
             M.ball.posX = M.user.posX + M.user.width/2 - M.ball.width/2;
         }
     },
-    isCollision: function (elemA, elemB) {
+    isCollision: function (elemA, elemB, speed = 0) {
         return elemA.posX < elemB.posX + elemB.width &&
             elemA.posX + elemA.width > elemB.posX &&
             elemA.posY < elemB.posY + elemB.height &&
@@ -364,6 +378,10 @@ V = {
 
                     case 2:
                         ctx.drawImage(block2Image, blocks[e].x, blocks[e].y, blocks[e].width, blocks[e].height);
+                        break;
+
+                    case 3:
+                        ctx.drawImage(block3Image, blocks[e].x, blocks[e].y, blocks[e].width, blocks[e].height);
                         break;
 
                     case -1 :
