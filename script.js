@@ -36,11 +36,11 @@ weaponShot.src = "img/bonus/weaponShot.png";
 const threeBallsMore = new Image();
 threeBallsMore.src = "img/bonus/threeBallsMore.png";
 const increaseUserSpeed = new Image();
-increaseUserSpeed.src = "img/increaseUserSpeed.png";
+increaseUserSpeed.src = "img/bonus/increaseUserSpeed.png";
 const splitUserSize = new Image();
-splitUserSize.src = "img/splitUserSize.png";
+splitUserSize.src = "img/bonus/splitUserSize.png";
 const reverseControls = new Image();
-reverseControls.src = "img/reverseControls.png";
+reverseControls.src = "img/bonus/reverseControls.png";
 const reduceUserSpeed = new Image();
 reduceUserSpeed.src = "img/bonus/reduceUserSpeed.png";
 const increaseBallSpeed = new Image();
@@ -83,17 +83,51 @@ class physicElement {
     set status(value){ this._status = value; }
 }
 class Bonus extends physicElement{
-    constructor(posX,posY,width,height,status, effect){
+    constructor(posX,posY,width,height,status, name, duration){
         super(posX,posY,width,height,status);
-        this._effect = effect;
+        this._name = name;
+        this._duration = duration;
+        this._timer = null;
     }
 
+    startBonus(){
+        this._timer = setTimeout(function(){
+            switch (this._name) {
+                case "doubleUserSize": M.user.width = M.userWidth;
+                    break;
+                case "splitUserSize": M.user.width = M.userWidth;
+                    break;
+                case "increaseUserSpeed": M.user.speed = M.userSpeed;
+                    break;
+                case "reduceUserSpeed": M.user.speed = M.userSpeed;
+                    break;
+                case "increaseBallSpeed": M.ball.speed = M.ballSpeed;
+                    break;
+            }
+        }.bind(this), this._duration);
+
+        switch (this._name) {
+            case "doubleUserSize":  M.user.width = M.userWidth*2;
+                break;
+            case "splitUserSize":  M.user.width = M.userWidth/1.5;
+                break;
+            case "increaseUserSpeed": M.user.speed = M.userSpeed*2;
+                break;
+            case "reduceUserSpeed": M.user.speed = M.userSpeed/2;
+                break;
+            case "increaseBallSpeed": M.ball.speed = M.ballSpeed * 2;
+                break;
+        }
+    }
+    stopBonus(){
+        clearTimeout(this._timer);
+    }
     moveBonus(move){
         this.posY += move;
     }
-    get effect(){
-        return this._effect;
-    }
+
+    get name(){return this._name;}
+    get duration(){return this._duration;}
 }
 class Block extends physicElement{
     constructor(posX,posY,width,height,status, life){
@@ -104,28 +138,33 @@ class Block extends physicElement{
     loseLife(){this._life--}
 }
 class User extends physicElement{
-    constructor(posX,posY,width,height,status,life = 3){
+    constructor(posX,posY,width,height,status,speed = M.userSpeed, life = 3, bonusArray = []){
         super(posX,posY,width,height,status);
+        this._speed = speed;
         this._life = life;
+        this._bonusArray = bonusArray;
     }
+
+    get speed(){return this._speed;}
+    set speed(value){this._speed = value}
 
     get life(){return this._life;}
     loseLife(){this._life--}
+
+    get bonusArray(){return this._bonusArray}
 
     moveUser(move){
         this._posX += move;
     }
 }
-
-
 class Ball extends physicElement{
-    constructor(posX,posY,width,height,status, move, ballSpeed = 6){
+    constructor(posX,posY,width,height,status, move, speed = M.ballSpeed){
         super(posX,posY,width,height,status);
         this._isMoving = move;
-        this._ballSpeed = ballSpeed;
+        this._speed = speed;
     }
-    get ballSpeed(){ return this._ballSpeed}
-    set ballSpeed(value){ this._ballSpeed = value}
+    get speed(){ return this._speed}
+    set speed(value){ this._speed = value}
 
     get isMoving(){
         return this._isMoving;
@@ -145,6 +184,12 @@ class Ball extends physicElement{
 M = {
     blocksWidth: 40,
     blocksHeight: 40,
+    /*blocksMatrice: [
+        [0,1,1,1,1,1,1,0,1,1,1,1,1,1,0],
+        [0,1,0,1,1,0,1,0,1,0,1,1,0,1,0],
+        [0,1,1,0,0,1,1,0,1,1,0,0,1,1,0],
+        [0,1,0,1,1,0,1,0,1,0,1,1,0,1,0]
+    ],*/
     blocksMatrice: [
         [0,-1,3,3,3,3,-1,0,-1,3,3,3,3,-1,0],
         [0,3,0,2,2,0,3,0,3,0,2,2,0,3,0],
@@ -158,16 +203,26 @@ M = {
 
     ballWidth: 20,
     ballHeight: 20,
+    ballSpeed : 4,
 
     userSpeed:8,
     userActualMove:0,
     userWidth: 100,
     userHeight: 15,
 
-    bonusArray: [],
+    bonusFallingArray: [],
     bonusFallSpeed: 3,
-    goodEffects: ["doubleUserSize","weaponShot","threeBallsMore", "increaseUserSpeed"],
-    badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed","bomb"],
+    allBonus: [
+        ["doubleUserSize" , 10],
+        ["weaponShot" , 10],
+        ["threeBallsMore" , -1],
+        ["increaseUserSpeed" , 10],
+        ["splitUserSize" , 10],
+        ["reverseControls" , 10],
+        ["reduceUserSpeed" , 10],
+        ["increaseBallSpeed" , 10],
+        ["bomb" , -1]
+    ],
 
     moveX : 0,
     moveY : 0,
@@ -183,6 +238,10 @@ M = {
         M.moveY = -1;
     },
     resetUserPositionAndSize: function(){
+        for(let i in M.user.bonusArray){
+            M.user.bonusArray[i].stopBonus();
+            M.user.bonusArray.splice(i,1);
+        }
         M.user.posX = canvas.width / 2 - M.userWidth/2;
         M.user.width = M.userWidth;
         M.user.height = M.userHeight;
@@ -199,19 +258,19 @@ M = {
                 }
             }
         }
-
+        M.bonusFallingArray = [];
         M.user = new User(canvas.width / 2 - M.userWidth/2, canvas.height - 50, M.userWidth, M.userHeight, true);
         M.initBall();
 
         document.body.addEventListener('keydown', (e) => {
             if (e.key === "ArrowLeft") {
                 if(M.userActualMove >= 0){
-                    M.userActualMove = -M.userSpeed;
+                    M.userActualMove = -M.user.speed;
                 }
             }
             if (e.key === "ArrowRight") {
                 if(M.userActualMove <= 0){
-                    M.userActualMove = M.userSpeed;
+                    M.userActualMove = M.user.speed;
                 }
             }
             if (e.key === " ") {
@@ -244,25 +303,8 @@ M = {
         }
     },
     isBorderLeftOrRightCollision: function (index) {
-        return (M.ball.posX + M.ball.width - M.ball.ballSpeed < M.blocks[index].posX && M.moveX > 0) ||
-            (M.ball.posX + M.ball.ballSpeed > M.blocks[index].posX + M.blocks[index].width && M.moveX < 0);
-    },
-    bonusDropping: function(index){
-        let isDropping = getRandomInt(3);
-        let effect = null;
-        //bonus is drop
-        if(isDropping === 0){
-            let goodBonusOrNot = getRandomInt(2);
-            //good effect
-            if(goodBonusOrNot === 0){
-                effect = M.goodEffects[getRandomInt(M.goodEffects.length)];
-            }else{
-                //bad effect
-                effect = M.badEffects[getRandomInt(M.badEffects.length)];
-            }
-            console.log(effect);
-            M.bonusArray.push(new Bonus(M.blocks[index].posX, M.blocks[index].posY, M.blocksWidth, M.blocksHeight, true, effect));
-        }
+        return (M.ball.posX + M.ball.width - M.ball.speed < M.blocks[index].posX && M.moveX > 0) ||
+            (M.ball.posX + M.ball.speed > M.blocks[index].posX + M.blocks[index].width && M.moveX < 0);
     },
     getBricksCollision: function () {
         for (let index in M.blocks) {
@@ -296,7 +338,6 @@ M = {
             //Positive ratio if left side (37-30 / 40-30) = 0.7 -0.3 => for X and 1.7 for Y
             //Negative ratio if right side (47-30/ 40-30 = 1.7  0.3 => for Y and 1.7 for X 1.9
             let ratio = (middleBall - M.user.posX) / (middleUser - M.user.posX);
-
             let ratioY = 2;
 
             if (ratio < 1 && ratio < 1 - M.ratioMax){
@@ -338,8 +379,51 @@ M = {
         }
         return false;
     },
+    getBonusCollision: function (index) {
+        if (M.isCollision(M.user, M.bonusFallingArray[index])) {
+            let duration = M.bonusFallingArray[index].duration;
+            let BFalling = M.bonusFallingArray[index].name;
+            let BUser = null;
+            if(duration > 0){
+                for(let i in M.user.bonusArray){
+                    BUser = M.user.bonusArray[i].name;
+                    if(  BUser === BFalling ||
+                        (BUser === "doubleUserSize" && BFalling === "splitUserSize") ||
+                        (BUser === "splitUserSize" && BFalling === "doubleUserSize") ||
+                        (BUser === "increaseUserSpeed" && BFalling === "reduceUserSpeed") ||
+                        (BUser === "reduceUserSpeed" && BFalling === "increaseUserSpeed")){
+
+                        M.user.bonusArray[i].stopBonus();
+                        M.user.bonusArray.splice(i,1);
+                    }
+                }
+                M.bonusFallingArray[index].startBonus();
+                M.user.bonusArray.push(M.bonusFallingArray[index]);
+            }else{
+                switch (BFalling) {
+                    case "threeBallsMore" :
+                        break;
+                    case "bomb":
+                        M.user.loseLife();
+                        M.getUserLife();
+                        break;
+                }
+            }
+            M.bonusFallingArray.splice(index, 1);
+            /*
+                   setTimeout(function(){
+                       M.user.width = M.userWidth;
+                   }, 5000);
+                   M.user.width = M.userWidth*1.5;
+
+                   M.user.speed = M.userSpeed/2;
+                   setTimeout(function(){
+                       M.user.speed = M.userSpeed;
+                   }, 5000);*/
+        }
+    },
     moveBall: function () {
-        for(let y = 0; y < M.ball.ballSpeed; y++) {
+        for(let y = 0; y < M.ball.speed; y++) {
             M.ball.moveBall(M.moveX, M.moveY);
 
             if(M.getCanvasCollision()){
@@ -357,6 +441,7 @@ M = {
         if(M.blocksNumber === 0){
             M.ball.stop();
             alert("partie finie");
+            M.init();
         }
     },
     moveUser: function(){
@@ -366,22 +451,19 @@ M = {
         }
     },
     moveBonus: function(){
-        for(let index in M.bonusArray){
-            M.bonusArray[index].moveBonus(M.bonusFallSpeed);
-            if(M.isCollision(M.user, M.bonusArray[index])){
-                switch (M.bonusArray[index].effect) {
-                    case "doubleUserSize" :  ; break;
-                    case "weaponShot" : ; break;
-                    case "threeBallsMore" : ; break;
-                    case "increaseUserSpeed" : ; break;
-                    case "splitUserSize" : ; break;
-                    case "reverseControls" : ; break;
-                    case "reduceUserSpeed" : ; break;
-                    case "increaseBallSpeed" : ; break;
-                    case "bomb": M.user.loseLife(); M.getUserLife(); break;
-                }
-                M.bonusArray.splice(index, 1);
-            }
+        for(let index in M.bonusFallingArray){
+            M.bonusFallingArray[index].moveBonus(M.bonusFallSpeed);
+            M.getBonusCollision(index);
+        }
+    },
+    bonusDropping: function(index){
+        let isDropping = getRandomInt(3);
+        let bonus = null;
+        //bonus is dropping
+        if(isDropping === 0){
+            let position = getRandomInt(M.allBonus.length);
+            bonus = M.allBonus[position];
+            M.bonusFallingArray.push(new Bonus(M.blocks[index].posX, M.blocks[index].posY, M.blocksWidth, M.blocksHeight, true, bonus[0], bonus[1]*1000));
         }
     },
     isCollision: function (elemA, elemB) {
@@ -420,7 +502,8 @@ C = {
             width: M.user.width,
             height: M.user.height,
             status: M.user.status,
-            life: M.user.life
+            life: M.user.life,
+            speed: M.user.speed
         };
 
         let copyBlocks = Array();
@@ -440,18 +523,19 @@ C = {
             y: M.ball.posY,
             width: M.ball.width,
             height: M.ball.height,
-            status: M.ball.status
+            status: M.ball.status,
+            speed: M.ball.speed
         };
 
         let copyBonus = Array();
-        M.bonusArray.forEach(function(e){
+        M.bonusFallingArray.forEach(function(e){
             copyBonus.push({
                 x: e.posX,
                 y: e.posY,
                 width: e.width,
                 height: e.height,
                 status: e.status,
-                effect: e.effect
+                name: e.name
             });
         });
         V.render_canvas(copyUser, copyBlocks, copyBall, copyBonus);
@@ -508,8 +592,8 @@ V = {
     drawBonus: function(bonus){
         for(let e in bonus){
             let imageToDraw = null;
-            //get the bonus effect
-            switch (bonus[e].effect) {
+            //get the bonus name
+            switch (bonus[e].name) {
                 case "doubleUserSize" :  imageToDraw = doubleUserSize; break;
                 case "weaponShot" : imageToDraw = weaponShot; break;
                 case "threeBallsMore" : imageToDraw = threeBallsMore; break;
