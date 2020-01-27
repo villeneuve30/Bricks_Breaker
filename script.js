@@ -445,7 +445,14 @@ M = {
         }
     },
     moveUser: function(){
-        M.user.moveUser(M.userActualMove);
+        if(M.user.posX + M.userActualMove < 0) {
+            M.user.posX = 0;
+        }else if(M.user.posX + M.userActualMove + M.user.width > canvas.width){
+            M.user.posX = canvas.width - M.user.width;
+        }else{
+            M.user.moveUser(M.userActualMove);
+        }
+
         if(!M.ball.isMoving){
             M.ball.posX = M.user.posX + M.user.width/2 - M.ball.width/2;
         }
