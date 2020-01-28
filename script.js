@@ -158,26 +158,33 @@ class User extends physicElement{
     }
 }
 class Ball extends physicElement{
-    constructor(posX,posY,width,height,status, move, speed = M.ballSpeed){
+    constructor(posX,posY,width,height,status, isMoving, moveX, moveY, speed = M.ballSpeed){
         super(posX,posY,width,height,status);
-        this._isMoving = move;
+        this._isMoving = isMoving;
         this._speed = speed;
+        this._moveX = moveX;
+        this._moveY = moveY;
     }
     get speed(){ return this._speed}
     set speed(value){ this._speed = value}
 
-    get isMoving(){
-        return this._isMoving;
-    }
+    get isMoving(){return this._isMoving;}
+
     start(){
         this._isMoving = true;
     }
     stop(){
         this._isMoving = false;
     }
-    moveBall(moveX, moveY){
-        this._posX += moveX;
-        this._posY += moveY;
+    get moveX(){return this._moveX}
+    set moveX(value){this._moveX = value}
+
+    get moveY(){return this._moveY}
+    set moveY(value){this._moveY = value}
+
+    moveBall(){
+        this._posX += this._moveX;
+        this._posY += this._moveY;
     }
 }
 
@@ -204,6 +211,7 @@ M = {
     ballWidth: 20,
     ballHeight: 20,
     ballSpeed : 4,
+    ballsArray: [],
 
     userSpeed:8,
     userActualMove:0,
@@ -224,8 +232,6 @@ M = {
         ["bomb" , -1]
     ],
 
-    moveX : 0,
-    moveY : 0,
     ratioMax:0.9,
 
     user :{},
@@ -233,9 +239,10 @@ M = {
     blocks: [],
 
     initBall: function(){
-        M.ball = new Ball(M.user.posX + M.user.width/2 - M.ballWidth/2, M.user.posY - M.ballHeight , M.ballWidth, M.ballHeight, true, false);
-        M.moveX = 1;
-        M.moveY = -1;
+        M.ballsArray = [];
+        let ball = new Ball(M.user.posX + M.user.width/2 - M.ballWidth/2, M.user.posY - M.ballHeight , M.ballWidth, M.ballHeight, true, false, 1, -1, M.ballSpeed);
+        M.ballsArray.push(ball);
+        M.ballsArray[0].stop();
     },
     resetUserPositionAndSize: function(){
         for(let i in M.user.bonusArray){
@@ -274,7 +281,9 @@ M = {
                 }
             }
             if (e.key === " ") {
-                M.ball.start();
+                M.ballsArray.forEach(function(e){
+                    e.start();
+                });
             }
             C.sync_M_and_V();
         });
@@ -302,19 +311,19 @@ M = {
             M.init();
         }
     },
-    isBorderLeftOrRightCollision: function (index) {
-        return (M.ball.posX + M.ball.width - M.ball.speed < M.blocks[index].posX && M.moveX > 0) ||
-            (M.ball.posX + M.ball.speed > M.blocks[index].posX + M.blocks[index].width && M.moveX < 0);
+    isBorderLeftOrRightCollision: function (index, ball) {
+        return (ball.posX + ball.width - ball.speed < M.blocks[index].posX && ball.moveX > 0) ||
+            (ball.posX + ball.speed > M.blocks[index].posX + M.blocks[index].width && ball.moveX < 0);
     },
-    getBricksCollision: function () {
+    getBricksCollision: function (ball) {
         for (let index in M.blocks) {
-            if (M.blocks[index].status && M.isCollision(M.ball, M.blocks[index])) {
-                if (M.isBorderLeftOrRightCollision(index)) {
-                    M.moveX = -M.moveX;
-                    M.ball.posX += M.moveX * 2;
+            if (M.blocks[index].status && M.isCollision(ball, M.blocks[index])) {
+                if (M.isBorderLeftOrRightCollision(index, ball)) {
+                    ball.moveX = -ball.moveX;
+                    M.ball.posX += ball.moveX * 2;
                 }else{
-                    M.moveY = -M.moveY;
-                    M.ball.posY += M.moveY * 2;
+                    ball.moveY = -ball.moveY;
+                    M.ball.posY += ball.moveY * 2;
                 }
 
                 if(M.blocks[index].life !== -1)
@@ -330,10 +339,10 @@ M = {
         }
         return false;
     },
-    getUserCollision: function () {
-        if (M.isCollision(M.ball, M.user) && M.moveY > 0) {
+    getUserCollision: function (ball) {
+        if (M.isCollision(ball, M.user) && ball.moveY > 0) {
             let middleUser = M.user.posX + M.user.width/2;
-            let middleBall = M.ball.posX + M.ball.width/2;
+            let middleBall = ball.posX + ball.width/2;
 
             //Positive ratio if left side (37-30 / 40-30) = 0.7 -0.3 => for X and 1.7 for Y
             //Negative ratio if right side (47-30/ 40-30 = 1.7  0.3 => for Y and 1.7 for X 1.9
@@ -347,30 +356,30 @@ M = {
             }
             //left side collision
             if (ratio < 1) {
-                M.moveX = -(1-ratio);
+                ball.moveX = -(1-ratio);
                 ratioY = 2-(1-ratio);
             }else if(ratio > 1){
                 //right side collision
-                M.moveX = (ratio-1);
+                ball.moveX = (ratio-1);
                 ratioY = 2-(ratio-1);
             }else{
-                M.moveX = 0;
+                ball.moveX = 0;
             }
 
-            M.moveY = -ratioY;
+            ball.moveY = -ratioY;
             return true;
         }
     },
-    getCanvasCollision: function () {
-        if (M.ball.posY < 0) {
-            M.moveY = -M.moveY;
+    getCanvasCollision: function (ball) {
+        if (ball.posY < 0) {
+            ball.moveY = -ball.moveY;
             return true;
         }
-        if (M.ball.posX + M.ball.width > canvas.width || M.ball.posX < 0) {
-            M.moveX = -M.moveX;
+        if (ball.posX + ball.width > canvas.width || ball.posX < 0) {
+            ball.moveX = -ball.moveX;
             return true
         }
-        if (M.ball.posY > canvas.height) {
+        if (ball.posY > canvas.height) {
             M.resetUserPositionAndSize();
             M.initBall();
             M.user.loseLife();
@@ -422,27 +431,28 @@ M = {
                    }, 5000);*/
         }
     },
-    moveBall: function () {
-        for(let y = 0; y < M.ball.speed; y++) {
-            M.ball.moveBall(M.moveX, M.moveY);
+    moveBall: function (ball) {
+        for(let y = 0; y < ball.speed; y++) {
+            ball.moveBall();
 
-            if(M.getCanvasCollision()){
+            if(M.getCanvasCollision(ball)){
                 break;
             }
 
-            if(M.getUserCollision()){
+            if(M.getUserCollision(ball)){
                 break;
             }
 
-            if(M.getBricksCollision()){
+            if(M.getBricksCollision(ball)){
                 break;
             }
         }
         if(M.blocksNumber === 0){
-            M.ball.stop();
+            ball.stop();
             alert("partie finie");
             M.init();
         }
+
     },
     moveUser: function(){
         if(M.user.posX + M.userActualMove < 0) {
@@ -481,14 +491,15 @@ M = {
     }
 };
 C = {
-    init:function()
-    {
+    init:function() {
         M.init();
         C.refresh();
     },
     refresh: function step() {
-        if (M.ball.isMoving)
-            M.moveBall();
+        for(let i = 0; i < M.ballsArray.length; i++) {
+            if (M.ballsArray[i].isMoving)
+                M.moveBall(M.ballsArray[i]);
+        }
 
         if(M.userActualMove !== 0)
             M.moveUser();
@@ -499,8 +510,7 @@ C = {
         C.sync_M_and_V();
         requestAnimationFrame(step);
     },
-    sync_M_and_V: function()
-    {
+    sync_M_and_V: function() {
         V.clear();
 
         let copyUser = {
@@ -525,14 +535,17 @@ C = {
             })
         });
 
-        let copyBall= {
-            x: M.ball.posX,
-            y: M.ball.posY,
-            width: M.ball.width,
-            height: M.ball.height,
-            status: M.ball.status,
-            speed: M.ball.speed
-        };
+        let copyBalls = Array();
+        M.ballsArray.forEach(function(e){
+            copyBalls.push({
+                x: e.posX,
+                y: e.posY,
+                width: e.width,
+                height: e.height,
+                status: e.status,
+                speed: e.speed
+            })
+        });
 
         let copyBonus = Array();
         M.bonusFallingArray.forEach(function(e){
@@ -545,25 +558,23 @@ C = {
                 name: e.name
             });
         });
-        V.render_canvas(copyUser, copyBlocks, copyBall, copyBonus);
+
+        V.render_canvas(copyUser, copyBlocks, copyBalls, copyBonus);
     }
 };
 
 V = {
-    clear:function()
-    {
+    clear:function() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
     },
-    drawUser: function(user)
-    {
+    drawUser: function(user) {
         //render user
         ctx.drawImage(userImage, user.x,user.y, user.width, user.height);
         for(let i =1; i<= user.life; i++){
             ctx.drawImage(heartImage, canvas.width - 30*i, 10, 28, 28);
         }
     },
-    drawBlocks:function(blocks)
-    {
+    drawBlocks:function(blocks) {
         //render blocks
         for(let e in blocks){
             if(blocks[e].status) {
@@ -587,15 +598,15 @@ V = {
             }
         }
     },
-    drawBall:function(ball){
+    drawBalls:function(balls){
         //render balls
-        if(ball.status)
-            ctx.drawImage(ballImage, ball.x, ball.y, ball.width, ball.height);
+        for(let i in balls)
+        if(balls[i].status)
+            ctx.drawImage(ballImage, balls[i].x, balls[i].y, balls[i].width, balls[i].height);
     },
     drawBackground:function(){
         ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height)
     },
-
     drawBonus: function(bonus){
         for(let e in bonus){
             let imageToDraw = null;
@@ -614,11 +625,10 @@ V = {
             ctx.drawImage(imageToDraw, bonus[e].x, bonus[e].y, bonus[e].width, bonus[e].height)
         }
     },
-    render_canvas(user, blocks, ball, bonus)
-    {
+    render_canvas(user, blocks, balls, bonus) {
         V.drawBackground();
         V.drawBlocks(blocks);
-        V.drawBall(ball);
+        V.drawBalls(balls);
         V.drawBonus(bonus);
         V.drawUser(user);
     }
