@@ -189,20 +189,69 @@ class Ball extends physicElement{
 }
 
 M = {
+    levelsArray : [
+        //level 1
+        [
+            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [ 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
+            [ 0, 3, 3, 3, 0, 0, 3, 3, 3, 0, 0, 3, 3, 3, 0],
+            [ 0, 0, 3, 3, 0, 0, 3, 3, 3, 0, 0, 3, 3, 0, 0],
+            [ 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0],
+        ],
+
+        //level 2
+        [
+            [ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
+            [ 0,-1, 3, 0, 3,-1, 3, 0, 3,-1, 3, 0, 3,-1, 0],
+            [ 0, 0, 3,-1, 3, 0, 3,-1, 3, 0, 3,-1, 3, 0, 0],
+            [ 0, 0, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 0, 0],
+            [ 0, 0, 0, 3, 2, 2, 2, 2, 2, 2, 2, 3, 0, 0, 0],
+            [ 0, 0, 0, 0, 3, 2, 2, 2, 2, 2, 3, 0, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 3, 2, 2, 2, 3, 0, 0, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0]
+        ],
+
+        //level 3
+        [
+            [ 0,-1, 3, 3, 3, 3,-1, 0,-1, 3, 3, 3, 3,-1, 0],
+            [ 0, 3, 0, 2, 2, 0, 3, 0, 3, 0, 2, 2, 0, 3, 0],
+            [ 0, 3, 2, 0, 0, 2, 3, 0, 3, 2, 0, 0, 2, 3, 0],
+            [ 0, 2, 0, 3, 3, 0, 2, 0, 2, 0, 3, 3, 0, 2, 0]
+        ],
+
+        //level 4
+        [
+            [ 0,-1, 3, 3, 3, 3,-1, 0,-1, 3, 3, 3, 3,-1, 0],
+            [ 0, 3, 0, 2, 2, 0, 3, 0, 3, 0, 2, 2, 0, 3, 0],
+            [ 0, 3, 2, 0, 0, 2, 3, 0, 3, 2, 0, 0, 2, 3, 0],
+            [ 0, 2, 0, 3, 3, 0, 2, 0, 2, 0, 3, 3, 0, 2, 0]
+        ],
+
+        //level 5
+        [
+            [ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [ 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2],
+            [ 2, 0, 0, 3, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 2],
+            [ 2, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 0, 3, 0, 2],
+            [ 2, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 2],
+            [ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
+        ],
+
+        //level 6
+        [
+            [ 0, 0, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 0, 0],
+            [ 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0],
+            [ 0,-1, 0, 0, 0,-1, 3, 0, 3,-1, 0, 0, 0,-1, 0],
+            [ 0, 0,-1, 0,-1, 0, 2, 0, 2, 0,-1, 0,-1, 0, 0],
+            [ 0, 0, 0,-1, 0, 0, 2, 0, 2, 0, 0,-1, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 0, 0],
+        ],
+    ],
+
     blocksWidth: 40,
     blocksHeight: 40,
-    /*blocksMatrice: [
-        [0,1,1,1,1,1,1,0,1,1,1,1,1,1,0],
-        [0,1,0,1,1,0,1,0,1,0,1,1,0,1,0],
-        [0,1,1,0,0,1,1,0,1,1,0,0,1,1,0],
-        [0,1,0,1,1,0,1,0,1,0,1,1,0,1,0]
-    ],*/
-    blocksMatrice: [
-        [0,-1,3,3,3,3,-1,0,-1,3,3,3,3,-1,0],
-        [0,3,0,2,2,0,3,0,3,0,2,2,0,3,0],
-        [0,3,2,0,0,2,3,0,3,2,0,0,2,3,0],
-        [0,2,0,3,3,0,2,0,2,0,3,3,0,2,0]
-    ],
+
     matriceLength: 0,
     blocksNumber: 0,
 
@@ -237,6 +286,7 @@ M = {
     user :{},
     ball :{},
     blocks: [],
+    actualLevel: 1,
 
     initBall: function(){
         M.ballsArray = [];
@@ -254,18 +304,21 @@ M = {
         M.user.height = M.userHeight;
         M.userActualMove = 0;
     },
-    init: function () {
-        M.matriceLength = M.blocksMatrice[0].length;
+    init: function (level) {
+        let matriceLevel = M.levelsArray[level-1];
+        M.matriceLength = matriceLevel[0].length;
+        console.log(M.matriceLength);
         canvas.width = M.matriceLength*M.blocksWidth;
 
-        for(let i in M.blocksMatrice) {
-            for (let y in M.blocksMatrice[i]) {
-                if (M.blocksMatrice[i][y] > 0) {
+        for(let i in matriceLevel) {
+            for (let y in matriceLevel[i]) {
+                if (matriceLevel[i][y] > 0) {
                     M.blocksNumber++;
                 }
             }
         }
         M.bonusFallingArray = [];
+        M.resetUserPositionAndSize();
         M.user = new User(canvas.width / 2 - M.userWidth/2, canvas.height - 50, M.userWidth, M.userHeight, true);
         M.initBall();
 
@@ -294,10 +347,10 @@ M = {
         });
         let posx = 0;
         let posy = 100;
-        for(let i = 0; i < M.blocksMatrice.length; i++) {
-            for (let y = 0; y < M.blocksMatrice[i].length; y++) {
-                if (M.blocksMatrice[i][y] !== 0) {
-                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, M.blocksMatrice[i][y]));
+        for(let i = 0; i < matriceLevel.length; i++) {
+            for (let y = 0; y < matriceLevel[i].length; y++) {
+                if (matriceLevel[i][y] !== 0) {
+                        M.blocks.push(new Block(posx, posy, M.blocksWidth, M.blocksHeight, true, matriceLevel[i][y]));
                 }
                 posx += M.blocksWidth;
             }
@@ -344,8 +397,8 @@ M = {
             let middleUser = M.user.posX + M.user.width/2;
             let middleBall = ball.posX + ball.width/2;
 
-            //Positive ratio if left side (37-30 / 40-30) = 0.7 -0.3 => for X and 1.7 for Y
-            //Negative ratio if right side (47-30/ 40-30 = 1.7  0.3 => for Y and 1.7 for X 1.9
+            //Positive ratio if left side (37-30/ 40-30) = 0.7 -0.3 => for X and 1.7 for Y
+            //Negative ratio if right side (47-30/ 40-30)= 1.7  0.3 => for Y and 1.7 for X
             let ratio = (middleBall - M.user.posX) / (middleUser - M.user.posX);
             let ratioY = 2;
 
@@ -370,20 +423,24 @@ M = {
             return true;
         }
     },
-    getCanvasCollision: function (ball) {
-        if (ball.posY < 0) {
-            ball.moveY = -ball.moveY;
+    getCanvasCollision: function (i) {
+        if (M.ballsArray[i].posY < 0) {
+            M.ballsArray[i].moveY = -M.ballsArray[i].moveY;
             return true;
         }
-        if (ball.posX + ball.width > canvas.width || ball.posX < 0) {
-            ball.moveX = -ball.moveX;
+        if (M.ballsArray[i].posX + M.ballsArray[i].width > canvas.width || M.ballsArray[i].posX < 0) {
+            M.ballsArray[i].moveX = -M.ballsArray[i].moveX;
             return true
         }
-        if (ball.posY > canvas.height) {
-            M.resetUserPositionAndSize();
-            M.initBall();
-            M.user.loseLife();
-            M.getUserLife();
+        if (M.ballsArray[i].posY > canvas.height) {
+            if(M.ballsArray.length === 1) {
+                M.resetUserPositionAndSize();
+                M.initBall();
+                M.user.loseLife();
+                M.getUserLife();
+            }else{
+                M.ballsArray.splice(i,1);
+            }
             return true
         }
         return false;
@@ -411,6 +468,10 @@ M = {
             }else{
                 switch (BFalling) {
                     case "threeBallsMore" :
+                        let newBall1 = new Ball(M.ballsArray[0].posX,M.ballsArray[0].posY, M.ballsArray[0].width, M.ballsArray[0].height, true,true,M.ballsArray[0].moveX,-M.ballsArray[0].moveY,M.ballsArray[0].speed);
+                        let newBall2 = new Ball(M.ballsArray[0].posX,M.ballsArray[0].posY, M.ballsArray[0].width, M.ballsArray[0].height, true,true,-M.ballsArray[0].moveX,-M.ballsArray[0].moveY,M.ballsArray[0].speed);
+                        M.ballsArray.push(newBall1);
+                        M.ballsArray.push(newBall2);
                         break;
                     case "bomb":
                         M.user.loseLife();
@@ -431,28 +492,34 @@ M = {
                    }, 5000);*/
         }
     },
-    moveBall: function (ball) {
-        for(let y = 0; y < ball.speed; y++) {
-            ball.moveBall();
+    checkEndLevel: function () {
+        if (M.blocksNumber === 0) {
+            if(M.actualLevel === 6){
+                alert("bravo tu as fini les 6 niveaux");
+                M.actualLevel = 1;
+            }else if(confirm("Niveau "+ M.actualLevel +" fini, passer au suivant ?")){
+                M.actualLevel += 1;
+            }
+            M.init(M.actualLevel);
+        }
+    },
+    moveBall: function (i) {
+        for(let y = 0; y < M.ballsArray[i].speed; y++) {
+            M.ballsArray[i].moveBall();
 
-            if(M.getCanvasCollision(ball)){
+            if(M.getCanvasCollision(i)){
                 break;
             }
 
-            if(M.getUserCollision(ball)){
+            if(M.getUserCollision(M.ballsArray[i])){
                 break;
             }
 
-            if(M.getBricksCollision(ball)){
+            if(M.getBricksCollision(M.ballsArray[i])){
                 break;
             }
         }
-        if(M.blocksNumber === 0){
-            ball.stop();
-            alert("partie finie");
-            M.init();
-        }
-
+        M.checkEndLevel();
     },
     moveUser: function(){
         if(M.user.posX + M.userActualMove < 0) {
@@ -463,8 +530,8 @@ M = {
             M.user.moveUser(M.userActualMove);
         }
 
-        if(!M.ball.isMoving){
-            M.ball.posX = M.user.posX + M.user.width/2 - M.ball.width/2;
+        if(!M.ballsArray[0].isMoving){
+            M.ballsArray[0].posX = M.user.posX + M.user.width/2 - M.ballsArray[0].width/2;
         }
     },
     moveBonus: function(){
@@ -492,13 +559,13 @@ M = {
 };
 C = {
     init:function() {
-        M.init();
+        M.init(M.actualLevel);
         C.refresh();
     },
     refresh: function step() {
         for(let i = 0; i < M.ballsArray.length; i++) {
             if (M.ballsArray[i].isMoving)
-                M.moveBall(M.ballsArray[i]);
+                M.moveBall(i);
         }
 
         if(M.userActualMove !== 0)
@@ -562,7 +629,6 @@ C = {
         V.render_canvas(copyUser, copyBlocks, copyBalls, copyBonus);
     }
 };
-
 V = {
     clear:function() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
