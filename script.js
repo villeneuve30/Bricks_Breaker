@@ -25,10 +25,6 @@ block3Image.src = "img/block3.png";
 const blockUnbreakable = new Image();
 blockUnbreakable.src = "img/blockUnbreakable.png";
 
-/*
-    goodEffects: ["doubleUserSize","weaponShot","threeBallsMore", "increaseUserSpeed"]
-    badEffects: ["splitUserSize","reverseControls", "reduceUserSpeed", "increaseBallSpeed"]
- */
 const doubleUserSize = new Image();
 doubleUserSize.src = "img/bonus/doubleUserSize.png";
 const weaponShot = new Image();
@@ -57,7 +53,7 @@ function getRandomInt(max) {
     return Math.floor(Math.random() * Math.floor(max));
 }
 
-//Parent des éléments physique du jeu (User, blocks, ball)
+//Parent des éléments physique du jeu (User, blocks, ball....)
 class physicElement {
     constructor(posX,posY,width,height,status = true){
         this._posX = posX;
@@ -89,36 +85,6 @@ class Bonus extends physicElement{
         this._duration = duration;
         this._timer = null;
     }
-
-    startBonus(){
-        this._timer = setTimeout(function(){
-            switch (this._name) {
-                case "doubleUserSize": M.user.width = M.userWidth;
-                    break;
-                case "splitUserSize": M.user.width = M.userWidth;
-                    break;
-                case "increaseUserSpeed": M.user.speed = M.userSpeed;
-                    break;
-                case "reduceUserSpeed": M.user.speed = M.userSpeed;
-                    break;
-                case "increaseBallSpeed": M.ball.speed = M.ballSpeed;
-                    break;
-            }
-        }.bind(this), this._duration);
-
-        switch (this._name) {
-            case "doubleUserSize":  M.user.width = M.userWidth*2;
-                break;
-            case "splitUserSize":  M.user.width = M.userWidth/1.5;
-                break;
-            case "increaseUserSpeed": M.user.speed = M.userSpeed*2;
-                break;
-            case "reduceUserSpeed": M.user.speed = M.userSpeed/2;
-                break;
-            case "increaseBallSpeed": M.ball.speed = M.ballSpeed * 2;
-                break;
-        }
-    }
     stopBonus(){
         clearTimeout(this._timer);
     }
@@ -129,6 +95,104 @@ class Bonus extends physicElement{
     get name(){return this._name;}
     get duration(){return this._duration;}
 }
+class BonusDoubleUserSize extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+
+    startBonus(){
+        this._timer = setTimeout(function(){
+            M.user.width = M.userWidth;
+        },this._duration*1000);
+        M.user.width = M.userWidth*2
+    }
+}
+class BonusSplitUserSize extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+
+    startBonus(){
+        this._timer = setTimeout(function(){
+            M.user.width = M.userWidth;
+        },this._duration*1000);
+        M.user.width = M.userWidth/2
+    }
+}
+class BonusIncreaseUserSpeed extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+
+    startBonus(){
+        this._timer = setTimeout(function(){
+            M.user.speed = M.userSpeed;
+        },this._duration*1000);
+        M.user.speed = M.userSpeed*2;
+    }
+}
+class BonusReduceUserSpeed extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+
+    startBonus(){
+        this._timer = setTimeout(function(){
+            M.user.speed = M.userSpeed;
+        },this._duration*1000);
+        M.user.speed = M.userSpeed/2;
+    }
+}
+class BonusIncreaseBallSpeed extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+
+    startBonus(){
+        this._timer = setTimeout(function(){
+            for(let i = 0; i<M.ballsArray.length; i++) {M.ballsArray[i].speed = M.ballSpeed;}
+        },this._duration*1000);
+        for(let i = 0; i<M.ballsArray.length; i++) {M.ballsArray[i].speed = M.ballSpeed*1.5;}
+    }
+}
+class BonusBomb extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+}
+class BonusThreeBallsMore extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+    }
+}
+class BonusWeaponShot extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration){
+        super(posX,posY,width,height,status, name, duration);
+        this._shotting = null;
+    }
+    startBonus(){
+        this._shotting = setInterval(function(){
+            M.missileArray.push(new missile(M.user.posX, M.user.posY, 10, 20, true, -1, 4))
+        } ,1000);
+
+        this._timer = setTimeout(function(){
+            clearInterval(this._shotting);
+        },this._duration*1000);
+    }
+}
+class BonusReverseControls extends Bonus{
+    constructor(posX,posY, width, height, status, name, duration) {
+        super(posX, posY, width, height, status, name, duration);
+    }
+
+    startBonus(){
+        this._timer = setTimeout(function(){
+            M.user.confused = false;
+        },this._duration*1000);
+        M.user.confused = true;
+    }
+}
+
 class Block extends physicElement{
     constructor(posX,posY,width,height,status, life){
         super(posX,posY,width,height,status);
@@ -138,12 +202,16 @@ class Block extends physicElement{
     loseLife(){this._life--}
 }
 class User extends physicElement{
-    constructor(posX,posY,width,height,status,speed = M.userSpeed, life = 3, bonusArray = []){
+    constructor(posX,posY,width,height,status,speed = M.userSpeed, life, bonusArray, confused = false){
         super(posX,posY,width,height,status);
         this._speed = speed;
         this._life = life;
         this._bonusArray = bonusArray;
+        this._confused = confused;
     }
+
+    get confused(){return this._confused};
+    set confused(value){this._confused = value}
 
     get speed(){return this._speed;}
     set speed(value){this._speed = value}
@@ -158,7 +226,7 @@ class User extends physicElement{
     }
 }
 class Ball extends physicElement{
-    constructor(posX,posY,width,height,status, isMoving, moveX, moveY, speed = M.ballSpeed){
+    constructor(posX,posY,width,height,status, isMoving, moveX, moveY, speed){
         super(posX,posY,width,height,status);
         this._isMoving = isMoving;
         this._speed = speed;
@@ -187,65 +255,79 @@ class Ball extends physicElement{
         this._posY += this._moveY;
     }
 }
+class missile extends physicElement{
+    constructor(posX,posY,width, height,status, moveY, speed){
+        super(posX,posY,width,height,status);
+        this._moveY = moveY;
+        this._speed = speed;
+    }
+
+    get moveY(){return this._moveY}
+    set moveY(value){this._moveY = value}
+
+    get speed(){return this._speed}
+
+    move(){
+        this._posY += this._moveY;
+    }
+}
 
 M = {
     levelsArray : [
         //level 1
         [
-            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [ 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0],
-            [ 0, 3, 3, 3, 0, 0, 3, 3, 3, 0, 0, 3, 3, 3, 0],
-            [ 0, 0, 3, 3, 0, 0, 3, 3, 3, 0, 0, 3, 3, 0, 0],
-            [ 0, 0, 0, 3, 3, 3, 3, 3, 3, 3, 3, 3, 0, 0, 0],
+            [ 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0],
+            [ 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0],
+            [ 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0],
         ],
 
         //level 2
         [
-            [ 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3],
-            [ 0,-1, 3, 0, 3,-1, 3, 0, 3,-1, 3, 0, 3,-1, 0],
-            [ 0, 0, 3,-1, 3, 0, 3,-1, 3, 0, 3,-1, 3, 0, 0],
-            [ 0, 0, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 0, 0],
-            [ 0, 0, 0, 3, 2, 2, 2, 2, 2, 2, 2, 3, 0, 0, 0],
-            [ 0, 0, 0, 0, 3, 2, 2, 2, 2, 2, 3, 0, 0, 0, 0],
-            [ 0, 0, 0, 0, 0, 3, 2, 2, 2, 3, 0, 0, 0, 0, 0],
-            [ 0, 0, 0, 0, 0, 0, 3, 3, 3, 0, 0, 0, 0, 0, 0]
+            [ 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0],
+            [ 0, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 0],
+            [ 0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 0],
+            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [ 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2],
         ],
 
         //level 3
         [
-            [ 0,-1, 3, 3, 3, 3,-1, 0,-1, 3, 3, 3, 3,-1, 0],
-            [ 0, 3, 0, 2, 2, 0, 3, 0, 3, 0, 2, 2, 0, 3, 0],
-            [ 0, 3, 2, 0, 0, 2, 3, 0, 3, 2, 0, 0, 2, 3, 0],
-            [ 0, 2, 0, 3, 3, 0, 2, 0, 2, 0, 3, 3, 0, 2, 0]
+            [ 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0],
+            [ 0, 3,-1, 3,-1, 2,-1, 2,-1, 2,-1, 3,-1, 3, 0],
+            [ 0, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 3, 3, 3, 0],
+            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [ 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3],
         ],
 
         //level 4
         [
-            [ 0,-1, 3, 3, 3, 3,-1, 0,-1, 3, 3, 3, 3,-1, 0],
-            [ 0, 3, 0, 2, 2, 0, 3, 0, 3, 0, 2, 2, 0, 3, 0],
-            [ 0, 3, 2, 0, 0, 2, 3, 0, 3, 2, 0, 0, 2, 3, 0],
-            [ 0, 2, 0, 3, 3, 0, 2, 0, 2, 0, 3, 3, 0, 2, 0]
+            [ 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0],
+            [ 0, 0, 2, 2, 2, 2, 0, 0, 0, 2, 2, 2, 2, 0, 0],
+            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [-1,-1,-1,-1, 0, 0, 0, 0, 0, 0, 0,-1,-1,-1,-1],
+            [ 3, 3, 3, 3,-1, 0, 0, 0, 0, 0,-1, 3, 3, 3, 3],
+            [ 0, 0, 0, 0, 0,-1, 0, 0, 0,-1, 0, 0, 0, 0, 0],
         ],
 
         //level 5
         [
-            [ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0],
-            [ 2, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 2],
-            [ 2, 0, 0, 3, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 2],
-            [ 2, 0, 3, 0, 0, 0, 3, 0, 3, 0, 0, 0, 3, 0, 2],
-            [ 2, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 2],
-            [ 0, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0]
+            [ 0, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0],
+            [ 0, 2, 0, 0,-1, 2, 0, 2,-1, 2, 0, 2,-1, 2, 0],
+            [ 0, 2, 0,-1, 2, 0, 2,-1, 2, 0, 2,-1, 0, 2, 0],
+            [ 0, 2,-1, 2, 0, 2,-1, 2, 0, 2,-1, 0, 0, 2, 0],
+            [ 0,-1, 2, 0, 2,-1, 2, 0, 2,-1, 2, 2, 2, 3, 0],
         ],
 
         //level 6
         [
-            [ 0, 0, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 0, 0],
-            [ 0, 0, 0, 2, 2, 0, 0, 0, 0, 0, 2, 2, 0, 0, 0],
-            [ 0,-1, 0, 0, 0,-1, 3, 0, 3,-1, 0, 0, 0,-1, 0],
-            [ 0, 0,-1, 0,-1, 0, 2, 0, 2, 0,-1, 0,-1, 0, 0],
-            [ 0, 0, 0,-1, 0, 0, 2, 0, 2, 0, 0,-1, 0, 0, 0],
             [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [ 0, 0, 3, 3, 3, 3, 0, 0, 0, 3, 3, 3, 3, 0, 0],
+            [ 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0],
+            [ 0,-1, 3, 3, 3,-1, 0, 0, 0,-1, 3, 3, 3,-1, 0],
+            [ 0, 0,-1, 3,-1, 0, 0, 0, 0, 0,-1, 3,-1, 0, 0],
+            [ 0, 0, 0,-1, 0, 0, 0, 0, 0, 0, 0,-1, 0, 0, 0],
+            [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [ 0, 0, 3, 3, 3, 0, 3, 3, 3, 0, 3, 3, 3, 0, 0],
+            [ 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0],
         ],
     ],
 
@@ -263,28 +345,31 @@ M = {
     ballsArray: [],
 
     userSpeed:8,
+    userLifes : 3,
     userActualMove:0,
     userWidth: 100,
     userHeight: 15,
 
     bonusFallingArray: [],
-    bonusFallSpeed: 3,
+    bonusFallSpeed: 2,
+
+    missileArray : [],
     allBonus: [
-        ["doubleUserSize" , 10],
-        ["weaponShot" , 10],
-        ["threeBallsMore" , -1],
-        ["increaseUserSpeed" , 10],
-        ["splitUserSize" , 10],
-        ["reverseControls" , 10],
-        ["reduceUserSpeed" , 10],
-        ["increaseBallSpeed" , 10],
-        ["bomb" , -1]
+        new BonusDoubleUserSize(    0,0, 0, 0,  false,"doubleUserSize",     10),
+        new BonusSplitUserSize(     0,0, 0, 0,  false,"splitUserSize",      10),
+        new BonusIncreaseUserSpeed( 0,0, 0, 0,  false,"increaseUserSpeed",  10),
+        new BonusReduceUserSpeed(   0,0, 0, 0,  false,"reduceUserSpeed",    10),
+        new BonusIncreaseBallSpeed( 0,0, 0, 0,  false,"increaseBallSpeed",  10),
+        /*new BonusWeaponShot(              0,      0,       0,        0,        false,       "weaponShot",                 10),*/
+        new BonusReverseControls( 0,0, 0, 0,  false,"reverseControls",    10),
+        new BonusThreeBallsMore( 0,0, 0, 0,  false,"threeBallsMore",     -1),
+        new BonusBomb( 0,0, 0, 0,  false,"bomb",-1),
+        new BonusThreeBallsMore( 0,0, 0, 0,  false,"threeBallsMore",-1),
     ],
 
     ratioMax:0.9,
 
     user :{},
-    ball :{},
     blocks: [],
     actualLevel: 1,
 
@@ -305,9 +390,13 @@ M = {
         M.userActualMove = 0;
     },
     init: function (level) {
+        M.user ={};
+        M.ballsArray = [];
+        M.blocks= [];
+        M.blocksNumber = 0;
+
         let matriceLevel = M.levelsArray[level-1];
         M.matriceLength = matriceLevel[0].length;
-        console.log(M.matriceLength);
         canvas.width = M.matriceLength*M.blocksWidth;
 
         for(let i in matriceLevel) {
@@ -319,16 +408,16 @@ M = {
         }
         M.bonusFallingArray = [];
         M.resetUserPositionAndSize();
-        M.user = new User(canvas.width / 2 - M.userWidth/2, canvas.height - 50, M.userWidth, M.userHeight, true);
+        M.user = new User(canvas.width / 2 - M.userWidth/2, canvas.height - 50, M.userWidth, M.userHeight, true, M.userSpeed, M.userLifes, []);
         M.initBall();
 
         document.body.addEventListener('keydown', (e) => {
-            if (e.key === "ArrowLeft") {
+            if ((e.key === "ArrowLeft" && M.user.confused === false) || (e.key === "ArrowRight" && M.user.confused === true)) {
                 if(M.userActualMove >= 0){
                     M.userActualMove = -M.user.speed;
                 }
             }
-            if (e.key === "ArrowRight") {
+            if ((e.key === "ArrowRight" && M.user.confused === false) || (e.key === "ArrowLeft" && M.user.confused === true)) {
                 if(M.userActualMove <= 0){
                     M.userActualMove = M.user.speed;
                 }
@@ -361,7 +450,7 @@ M = {
     getUserLife: function(){
         if (!M.user.life) {
             alert("Tu n'as plus de vies, réessaye ?");
-            M.init();
+            M.init(M.actualLevel);
         }
     },
     isBorderLeftOrRightCollision: function (index, ball) {
@@ -373,10 +462,10 @@ M = {
             if (M.blocks[index].status && M.isCollision(ball, M.blocks[index])) {
                 if (M.isBorderLeftOrRightCollision(index, ball)) {
                     ball.moveX = -ball.moveX;
-                    M.ball.posX += ball.moveX * 2;
+                    ball.posX += ball.moveX * 2;
                 }else{
                     ball.moveY = -ball.moveY;
-                    M.ball.posY += ball.moveY * 2;
+                    ball.posY += ball.moveY * 2;
                 }
 
                 if(M.blocks[index].life !== -1)
@@ -480,24 +569,18 @@ M = {
                 }
             }
             M.bonusFallingArray.splice(index, 1);
-            /*
-                   setTimeout(function(){
-                       M.user.width = M.userWidth;
-                   }, 5000);
-                   M.user.width = M.userWidth*1.5;
-
-                   M.user.speed = M.userSpeed/2;
-                   setTimeout(function(){
-                       M.user.speed = M.userSpeed;
-                   }, 5000);*/
+            return true;
+        }
+        if(M.bonusFallingArray[index].posY > canvas.height){
+            M.bonusFallingArray.splice(index, 1);
         }
     },
     checkEndLevel: function () {
         if (M.blocksNumber === 0) {
             if(M.actualLevel === 6){
-                alert("bravo tu as fini les 6 niveaux");
+                alert("Bravo !  tu as fini les 6 niveaux !");
                 M.actualLevel = 1;
-            }else if(confirm("Niveau "+ M.actualLevel +" fini, passer au suivant ?")){
+            }else if(confirm("Niveau "+ M.actualLevel +" fini ! Passer au suivant ?")){
                 M.actualLevel += 1;
             }
             M.init(M.actualLevel);
@@ -540,14 +623,23 @@ M = {
             M.getBonusCollision(index);
         }
     },
+    moveMissiles: function(i){
+        for(let y = 0; y < M.missileArray[i].speed; y++) {
+            M.missileArray[i].move();
+        }
+    },
     bonusDropping: function(index){
-        let isDropping = getRandomInt(3);
-        let bonus = null;
-        //bonus is dropping
+        let isDropping = getRandomInt(4);
         if(isDropping === 0){
             let position = getRandomInt(M.allBonus.length);
-            bonus = M.allBonus[position];
-            M.bonusFallingArray.push(new Bonus(M.blocks[index].posX, M.blocks[index].posY, M.blocksWidth, M.blocksHeight, true, bonus[0], bonus[1]*1000));
+            let bonus = M.allBonus[position];
+            bonus.posX = M.blocks[index].posX;
+            bonus.posY = M.blocks[index].posY;
+            bonus.width = M.blocks[index].width;
+            bonus.height = M.blocks[index].height;
+            bonus.status = true;
+            M.bonusFallingArray.push(bonus);
+
         }
     },
     isCollision: function (elemA, elemB) {
@@ -566,6 +658,11 @@ C = {
         for(let i = 0; i < M.ballsArray.length; i++) {
             if (M.ballsArray[i].isMoving)
                 M.moveBall(i);
+        }
+        if(M.missileArray.length > 0){
+            for(let k = 0; k < M.missileArray.length; k++) {
+                M.moveMissiles(k);
+            }
         }
 
         if(M.userActualMove !== 0)
@@ -614,6 +711,18 @@ C = {
             })
         });
 
+        let copyMissiles = Array();
+        M.missileArray.forEach(function(e){
+            copyMissiles.push({
+                x: e.posX,
+                y: e.posY,
+                width: e.width,
+                height: e.height,
+                status: e.status,
+                speed: e.speed
+            })
+        });
+
         let copyBonus = Array();
         M.bonusFallingArray.forEach(function(e){
             copyBonus.push({
@@ -626,7 +735,7 @@ C = {
             });
         });
 
-        V.render_canvas(copyUser, copyBlocks, copyBalls, copyBonus);
+        V.render_canvas(copyUser, copyBlocks, copyBalls, copyBonus, copyMissiles);
     }
 };
 V = {
@@ -691,11 +800,17 @@ V = {
             ctx.drawImage(imageToDraw, bonus[e].x, bonus[e].y, bonus[e].width, bonus[e].height)
         }
     },
-    render_canvas(user, blocks, balls, bonus) {
+    drawMissiles: function(missiles){
+        for(let i in missiles)
+            if(missiles[i].status)
+                ctx.drawImage(ballImage, missiles[i].x, missiles[i].y, missiles[i].width, missiles[i].height);
+    },
+    render_canvas(user, blocks, balls, bonus, missiles) {
         V.drawBackground();
         V.drawBlocks(blocks);
         V.drawBalls(balls);
         V.drawBonus(bonus);
+        V.drawMissiles(missiles);
         V.drawUser(user);
     }
 };
